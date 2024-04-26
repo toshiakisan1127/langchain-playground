@@ -4,13 +4,24 @@ import streamlit as st
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
+from langchain.agents import AgentType, initialize_agent, load_tools
+from langchain.callbacks import StreamlitCallbackHandler
 
 load_dotenv()
+
+    
+def create_agent_chain():
+    chat = ChatOpenAI(
+            model_name = os.environ["OPENAI_API_MODEL"],
+            temperature = os.environ["OPENAI_API_TEMPERATURE"],
+            streaming = True
+        )
+    tools = load_tools(["ddg-search", "wikipedia"])
+    return initialize_agent(tools, chat, agent=AgentType.OPENAI_FUNCTIONS)
 
 st.title("langchain練習用のUI")
 
 prompt = st.chat_input("なんか用か ?")
-print(prompt);
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -28,12 +39,9 @@ if prompt:
     
     # AIのアイコンで固定の応答を用意してマークダウン形式で返す
     with st.chat_message("assistant"):
-        chat = ChatOpenAI(
-            model_name = os.environ["OPENAI_API_MODEL"],
-            temperature = os.environ["OPENAI_API_TEMPERATURE"]
-            )
-        messages = [HumanMessage(content = prompt)]
-        response = chat(messages)
-        st.markdown(response.content)
-    st.session_state.messages.append({"role": "assistant", "content": response.content})
-        
+        callback = StreamlitCallbackHandler(st.container())
+        agent_chain = create_agent_chain()
+        response = agent_chain.run(prompt, callbacks=[callback])
+        st.markdown(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    
