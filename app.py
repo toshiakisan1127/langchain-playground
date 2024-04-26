@@ -5,11 +5,10 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks import StreamlitCallbackHandler
+from langchain_community.callbacks import StreamlitCallbackHandler
 
 load_dotenv()
 
-    
 def create_agent_chain():
     chat = ChatOpenAI(
             model_name = os.environ["OPENAI_API_MODEL"],
@@ -41,7 +40,7 @@ if prompt:
     with st.chat_message("assistant"):
         callback = StreamlitCallbackHandler(st.container())
         agent_chain = create_agent_chain()
-        response = agent_chain.run(prompt, callbacks=[callback])
-        st.markdown(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        response = agent_chain.invoke(prompt, callbacks=[callback])
+        st.markdown(response["output"])
+    st.session_state.messages.append({"role": "assistant", "content": response["output"]})
     
