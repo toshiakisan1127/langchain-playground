@@ -12,6 +12,7 @@ langChainで遊ぶだけのリポジトリ
 ```
 OPENAI_API_KEY=<APIキー>
 OPENAI_API_MODEL=gpt-3.5-turbo
+OPENAI_API_MODEL_GPT4=gpt-4-turbo-2024-04-09
 OPENAI_API_TEMPERATURE=0.5
 ```
 

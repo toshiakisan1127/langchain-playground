@@ -11,9 +11,9 @@ from langchain.prompts import MessagesPlaceholder
 
 load_dotenv()
 
-def create_agent_chain():
+def create_agent_chain(model_name: str):
     chat = ChatOpenAI(
-            model_name = os.environ["OPENAI_API_MODEL"],
+            model_name = model_name,
             temperature = os.environ["OPENAI_API_TEMPERATURE"],
             streaming = True
         )
@@ -21,12 +21,27 @@ def create_agent_chain():
     # OpenAI Fuctions AgentのプロンプトにMemoryの会話履歴を追加するための設定
     agent_kwargs = {"extra_prompt_messages": [MessagesPlaceholder(variable_name="memory")]}
     memory = ConversationBufferMemory(memory_key="memory", return_messages=True)
-    
     tools = load_tools(["ddg-search", "wikipedia"])
     return initialize_agent(tools, chat, agent=AgentType.OPENAI_FUNCTIONS, agent_kwargs=agent_kwargs, memory=memory)
 
-st.title("langchain練習用のUI")
+def switch_to_gpt4():
+    st.session_state.model_name  = os.environ["OPENAI_API_MODEL_GPT4"]
+    # 会話の途中でモデルを変える仕様は面倒なので全消去
+    st.session_state.messages = []
+    # agent_chainも初期化することで、エージェントが持っている会話履歴も削除
+    st.session_state.agent_chain = create_agent_chain(st.session_state.model_name)
+    st.write('GPT4に切り替えました！')
 
+st.title("GPT3.5と4の違いを試せるよ！")
+
+# 始めのモデルはgpt3.5にしておく
+model_name = os.environ["OPENAI_API_MODEL"]
+if "model_name" not in st.session_state:
+    st.session_state.model_name = model_name
+    
+# GPT4に切り替えるロジックをここに集約
+if st.button('GPT4に切り替える'):
+    switch_to_gpt4()
 prompt = st.chat_input("なんか用か ?")
 
 if "messages" not in st.session_state:
@@ -42,12 +57,11 @@ if prompt:
     # ユーザーのアイコンでpromptをマークダウンとして整形して表示
     with st.chat_message("user"):
         st.markdown(prompt)
-    
     # AIのアイコンで固定の応答を用意してマークダウン形式で返す
     with st.chat_message("assistant"):
         callback = StreamlitCallbackHandler(st.container())
         if "agent_chain" not in st.session_state:
-            st.session_state.agent_chain = create_agent_chain()
+            st.session_state.agent_chain = create_agent_chain(st.session_state.model_name)
         response = st.session_state.agent_chain.run(prompt, callbacks=[callback])
         st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
