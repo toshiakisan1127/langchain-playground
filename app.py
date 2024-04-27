@@ -48,7 +48,7 @@ if prompt:
         callback = StreamlitCallbackHandler(st.container())
         if "agent_chain" not in st.session_state:
             st.session_state.agent_chain = create_agent_chain()
-        response = st.session_state.agent_chain.invoke(prompt, callbacks=[callback])
-        st.markdown(response["output"])
-    st.session_state.messages.append({"role": "assistant", "content": response["output"]})
+        response = st.session_state.agent_chain.run(prompt, callbacks=[callback])
+        st.markdown(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
     
